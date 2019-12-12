@@ -1,0 +1,257 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>text_transformation.worker &#8212; text-transformation 0.0.post0.dev88+ga33f8cf.dirty documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for text_transformation.worker</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module houses the Worker component which is used by the scheduler to</span>
+<span class="sd">increase throughput by running tasks in parallel</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="kn">import</span> <span class="n">BeautifulSoup</span>
+<span class="kn">import</span> <span class="nn">zmq</span>
+
+
+<div class="viewcode-block" id="Worker"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.worker.Worker">[docs]</a><span class="k">class</span> <span class="nc">Worker</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes in requests from the scheduler and performs them and funnels the</span>
+<span class="sd">    results back to the scheduler.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        context(zmq.Context): context used by zmq to create the sockets that</span>
+<span class="sd">            push/pull information to/from a scheduler</span>
+<span class="sd">        listen_thread(Thread): runs self.listen in background to test worker</span>
+<span class="sd">            threads without too much hassle</span>
+<span class="sd">        scheduler_name(str): name of scheduler receives requests from and</span>
+<span class="sd">            pushes results to</span>
+<span class="sd">        transformations(dict): string of transformation names</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scheduler_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">transformations</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scheduler_name</span> <span class="o">=</span> <span class="n">scheduler_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transformations</span> <span class="o">=</span> <span class="n">transformations</span>
+        <span class="c1"># create zmq requester object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+        <span class="c1"># listening thread set-up</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listen_thread</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">listen</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Worker.start"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.worker.Worker.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Non-blocking call that starts a thread which listens for requests from </span>
+<span class="sd">        the scheduler and pushes results back to the scheduler</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listen_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Worker.stop"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.worker.Worker.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The listen call blocks indefinitly, stop can be invoked (from another</span>
+<span class="sd">        thread) to end the self.listen call</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ender</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">REQ</span><span class="p">)</span>
+        <span class="n">ender</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;inproc://</span><span class="si">{self.scheduler_name}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">ender</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">listen_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Worker.listen"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.worker.Worker.listen">[docs]</a>    <span class="k">def</span> <span class="nf">listen</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Listens for incoming requests by a scheduler. This call blocks</span>
+<span class="sd">        indefinitely (or until self.stop is invoked)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">receiver</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">PULL</span><span class="p">)</span>
+        <span class="n">sender</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">PUSH</span><span class="p">)</span>
+        <span class="n">ender</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">REP</span><span class="p">)</span>
+
+        <span class="n">receiver</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ipc://./.</span><span class="si">{self.scheduler_name}</span><span class="s2">push.ipc&quot;</span><span class="p">)</span>
+        <span class="n">sender</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ipc://./.</span><span class="si">{self.scheduler_name}</span><span class="s2">pull.ipc&quot;</span><span class="p">)</span>
+        <span class="n">ender</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;inproc://</span><span class="si">{self.scheduler_name}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># makes a poller</span>
+        <span class="n">poller</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Poller</span><span class="p">()</span>
+        <span class="n">poller</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">ender</span><span class="p">,</span> <span class="n">zmq</span><span class="o">.</span><span class="n">POLLIN</span><span class="p">)</span>
+        <span class="n">poller</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">receiver</span><span class="p">,</span> <span class="n">zmq</span><span class="o">.</span><span class="n">POLLIN</span><span class="p">)</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">socks</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">poller</span><span class="o">.</span><span class="n">poll</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">ender</span> <span class="ow">in</span> <span class="n">socks</span> <span class="ow">and</span> <span class="n">socks</span><span class="p">[</span><span class="n">ender</span><span class="p">]</span> <span class="o">==</span> <span class="n">zmq</span><span class="o">.</span><span class="n">POLLIN</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">ender</span><span class="o">.</span><span class="n">recv_pyobj</span><span class="p">()</span>
+                <span class="k">return</span>
+            <span class="k">elif</span> <span class="n">receiver</span> <span class="ow">in</span> <span class="n">socks</span> <span class="ow">and</span> <span class="n">socks</span><span class="p">[</span><span class="n">receiver</span><span class="p">]</span> <span class="o">==</span> <span class="n">zmq</span><span class="o">.</span><span class="n">POLLIN</span><span class="p">:</span>
+                <span class="n">r_id</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">receiver</span><span class="o">.</span><span class="n">recv_pyobj</span><span class="p">()</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_recv</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">sender</span><span class="o">.</span><span class="n">send_pyobj</span><span class="p">((</span><span class="n">r_id</span><span class="p">,</span> <span class="n">data</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Worker.on_recv"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.worker.Worker.on_recv">[docs]</a>    <span class="k">def</span> <span class="nf">on_recv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Handler of json data it receives from listen</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            data(dict): dictionary representation of the json required to be</span>
+<span class="sd">                transformed</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            (dict): response to the transformation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">stop_words</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;the&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;of&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;to&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;a&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;and&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;in&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;said&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;for&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;that&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;was&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;on&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;he&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;is&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;with&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;at&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;by&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;it&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;from&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;as&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;be&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;were&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;an&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;have&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;his&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;but&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;has&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;are&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;not&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;who&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;they&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;its&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;had&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;will&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;would&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;about&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;i&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;been&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;this&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;their&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;new&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;or&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;which&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;we&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;more&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;after&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;us&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;percent&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;up&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;one&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;people&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span> <span class="s2">&quot;html.parser&quot;</span><span class="p">)</span>
+        <span class="n">tfs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;transformations&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformations</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformations</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                <span class="n">tfs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">tf</span><span class="p">(</span>
+                    <span class="n">arg</span><span class="p">,</span> <span class="n">soup_instance</span><span class="o">=</span><span class="n">soup</span><span class="p">,</span> <span class="n">stop_word_list</span><span class="o">=</span><span class="n">stop_words</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">tfs</span></div></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">text-transformation</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">Module Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, gregjhansell97.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

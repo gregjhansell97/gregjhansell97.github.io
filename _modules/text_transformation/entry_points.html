@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>text_transformation.entry_points &#8212; text-transformation 0.0.post0.dev88+ga33f8cf.dirty documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for text_transformation.entry_points</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">File that houses all the entry points.There is currently only one entry point.</span>
+<span class="sd">That entry point is run_server which starts up a scheduler and a variable</span>
+<span class="sd">number of workers</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Process</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">text_transformation.scheduler</span> <span class="kn">import</span> <span class="n">Scheduler</span>
+<span class="kn">from</span> <span class="nn">text_transformation.worker</span> <span class="kn">import</span> <span class="n">Worker</span>
+<span class="kn">from</span> <span class="nn">text_transformation.transformations</span> <span class="kn">import</span> <span class="n">title</span><span class="p">,</span> <span class="n">stripped</span><span class="p">,</span> <span class="n">ngrams</span>
+
+
+<div class="viewcode-block" id="run_server"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.entry_points.run_server">[docs]</a><span class="k">def</span> <span class="nf">run_server</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Entry point that starts up several workers and a scheduler. The Scheduler</span>
+<span class="sd">    listends for http requests and delegates the requests off to workers</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">port</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">w_count</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">w_count</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">port</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">port</span><span class="p">)</span>
+        <span class="n">w_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">w_count</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Invalid Arguments:&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;text-trans-server &lt;name&gt; &lt;port&gt; &lt;num_workers&gt;&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="c1"># start scheduler</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">Scheduler</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="c1"># start workers</span>
+    <span class="n">worker_processes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">run_worker</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">name</span><span class="p">,)))</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">w_count</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;======== Running </span><span class="si">{w_count}</span><span class="s2"> Worker(s) =========&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">wp</span> <span class="ow">in</span> <span class="n">worker_processes</span><span class="p">:</span>
+        <span class="n">wp</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="c1"># listen for incomming messages</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">host</span><span class="p">(</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">wp</span> <span class="ow">in</span> <span class="n">worker_processes</span><span class="p">:</span>
+        <span class="n">wp</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="run_worker"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.entry_points.run_worker">[docs]</a><span class="k">def</span> <span class="nf">run_worker</span><span class="p">(</span><span class="n">scheduler_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a helper function that runs on a separate process. It spins up a</span>
+<span class="sd">    worker that communicates with a scheduler specified scheduler name </span>
+
+<span class="sd">    Args: </span>
+<span class="sd">        scheduler_name: name of scheduler the worker is communicating with</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tf</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s2">&quot;stripped&quot;</span><span class="p">:</span> <span class="n">stripped</span><span class="p">,</span> <span class="s2">&quot;grams&quot;</span><span class="p">:</span> <span class="n">ngrams</span><span class="p">}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">Worker</span><span class="p">(</span><span class="n">scheduler_name</span><span class="p">,</span> <span class="n">tf</span><span class="p">)</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">listen</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">text-transformation</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">Module Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, gregjhansell97.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

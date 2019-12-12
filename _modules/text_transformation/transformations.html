@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>text_transformation.transformations &#8212; text-transformation 0.0.post0.dev88+ga33f8cf.dirty documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for text_transformation.transformations</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This file supplies helper functions to handle transformation of input data to </span>
+<span class="sd">output. The Worker uses these tools to parse its transformations</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">re</span>
+
+
+<div class="viewcode-block" id="title"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.transformations.title">[docs]</a><span class="k">def</span> <span class="nf">title</span><span class="p">(</span><span class="n">executing</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">soup_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a soup instance a returns the title. If there is no title, it will </span>
+<span class="sd">    then check h1, then h2, h3, h4, h5, h6, and the p tag in order. This </span>
+<span class="sd">    function will only return a title of a constant size</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        executing(bool): If true, this function returns the title, otherwise </span>
+<span class="sd">            it returns nothing</span>
+<span class="sd">        soup_instance: An instance of BeautifulSoup that contains the text to </span>
+<span class="sd">            transform</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (str): A string that contains the title or &quot;&quot;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">executing</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">string</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">string</span></div>
+
+
+<div class="viewcode-block" id="stripped"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.transformations.stripped">[docs]</a><span class="k">def</span> <span class="nf">stripped</span><span class="p">(</span><span class="n">executing</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">stop_word_list</span><span class="o">=</span><span class="p">[],</span> <span class="n">soup_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a soup instance and filters out html tags and stop words and returns </span>
+<span class="sd">    the resulting text in all lower case</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        stop_word_list(list): A list of stop words to be filtered</span>
+<span class="sd">        soup_instance: An instance of BeautifulSoup that contains the text to </span>
+<span class="sd">            transform</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (str): A string that does not contain html tags or stop words</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">executing</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="c1"># remove style and script tags</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">html</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">styletag</span> <span class="ow">in</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">html</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;style&quot;</span><span class="p">):</span>
+            <span class="n">styletag</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">scripttag</span> <span class="ow">in</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;script&quot;</span><span class="p">):</span>
+            <span class="n">scripttag</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="n">text</span> <span class="o">=</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">text</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">soup_instance</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="c1"># remove non alpha characters</span>
+    <span class="n">stripped_words</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;[a-z]+(?:&#39;[a-z]+)?&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+
+    <span class="n">return_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">stripped_words</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">word</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stop_word_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">return_text</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+                <span class="n">return_text</span> <span class="o">+=</span> <span class="s2">&quot; &quot;</span>
+            <span class="n">return_text</span> <span class="o">+=</span> <span class="n">word</span>
+    <span class="k">return</span> <span class="n">return_text</span></div>
+
+
+<div class="viewcode-block" id="ngrams"><a class="viewcode-back" href="../../api/text_transformation.html#text_transformation.transformations.ngrams">[docs]</a><span class="k">def</span> <span class="nf">ngrams</span><span class="p">(</span><span class="n">n</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">stop_word_list</span><span class="o">=</span><span class="p">[],</span> <span class="n">soup_instance</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Takes a soup instance, a list of n, and a list of stop words and returns </span>
+<span class="sd">    all resulting ngrams without stop words</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        stop_word_list(list): A list of stop words to be filtered</span>
+<span class="sd">        n(list): A list containing The amount of words in each gram </span>
+<span class="sd">            (i.e. 2-gram or 5-gram)</span>
+<span class="sd">        soup_instance: An instance of BeautifulSoup that contains the text to </span>
+<span class="sd">            transform</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        (dict): A dictionary where the keys are each n and the values are </span>
+<span class="sd">            their own dictionary where the keys is each ngram while the values </span>
+<span class="sd">            are a list of their occurrences</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># remove style and script tags</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">html</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">styletag</span> <span class="ow">in</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">html</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;style&quot;</span><span class="p">):</span>
+            <span class="n">styletag</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">scripttag</span> <span class="ow">in</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s2">&quot;script&quot;</span><span class="p">):</span>
+            <span class="n">scripttag</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+        <span class="n">text</span> <span class="o">=</span> <span class="n">soup_instance</span><span class="o">.</span><span class="n">text</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">soup_instance</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="c1"># remove non alpha characters</span>
+    <span class="n">stripped_words</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="s2">&quot;[a-z]+(?:&#39;[a-z]+)?&quot;</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="n">return_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">ngram_size</span> <span class="ow">in</span> <span class="n">n</span><span class="p">:</span>
+        <span class="c1"># make a sub-dict for each size n</span>
+        <span class="n">return_dict</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">stripped_words</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">ngram_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="n">accepted_ngram</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">ngram_key</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="k">for</span> <span class="n">ngram_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ngram_size</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">stripped_words</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">ngram_index</span><span class="p">]</span> <span class="ow">in</span> <span class="n">stop_word_list</span><span class="p">:</span>
+                    <span class="n">accepted_ngram</span> <span class="o">=</span> <span class="kc">False</span>
+                    <span class="k">break</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">ngram_index</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">ngram_key</span> <span class="o">+=</span> <span class="s2">&quot; &quot;</span>
+                    <span class="n">ngram_key</span> <span class="o">+=</span> <span class="n">stripped_words</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="n">ngram_index</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">accepted_ngram</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">ngram_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">return_dict</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">return_dict</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">][</span><span class="n">ngram_key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+                <span class="n">return_dict</span><span class="p">[</span><span class="n">ngram_size</span><span class="p">][</span><span class="n">ngram_key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">return_dict</span></div>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">text-transformation</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../authors.html">Authors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">Module Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, gregjhansell97.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,46 @@
+text\_transformation package
+============================
+
+Submodules
+----------
+
+text\_transformation.entry\_points module
+-----------------------------------------
+
+.. automodule:: text_transformation.entry_points
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+text\_transformation.scheduler module
+-------------------------------------
+
+.. automodule:: text_transformation.scheduler
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+text\_transformation.transformations module
+-------------------------------------------
+
+.. automodule:: text_transformation.transformations
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+text\_transformation.worker module
+----------------------------------
+
+.. automodule:: text_transformation.worker
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: text_transformation
+   :members:
+   :undoc-members:
+   :show-inheritance:

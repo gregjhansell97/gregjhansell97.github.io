@@ -1,0 +1,500 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>text_transformation package &#8212; text-transformation 0.0.post0.dev88+ga33f8cf.dirty documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="text_transformation" href="modules.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="text-transformation-package">
+<h1>text_transformation package<a class="headerlink" href="#text-transformation-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-text_transformation.entry_points">
+<span id="text-transformation-entry-points-module"></span><h2>text_transformation.entry_points module<a class="headerlink" href="#module-text_transformation.entry_points" title="Permalink to this headline">¶</a></h2>
+<p>File that houses all the entry points.There is currently only one entry point.
+That entry point is run_server which starts up a scheduler and a variable
+number of workers</p>
+<dl class="function">
+<dt id="text_transformation.entry_points.run_server">
+<code class="sig-prename descclassname">text_transformation.entry_points.</code><code class="sig-name descname">run_server</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/entry_points.html#run_server"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.entry_points.run_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Entry point that starts up several workers and a scheduler. The Scheduler
+listends for http requests and delegates the requests off to workers</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="text_transformation.entry_points.run_worker">
+<code class="sig-prename descclassname">text_transformation.entry_points.</code><code class="sig-name descname">run_worker</code><span class="sig-paren">(</span><em class="sig-param">scheduler_name: str</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/entry_points.html#run_worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.entry_points.run_worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is a helper function that runs on a separate process. It spins up a
+worker that communicates with a scheduler specified scheduler name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>scheduler_name</strong> – name of scheduler the worker is communicating with</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-text_transformation.scheduler">
+<span id="text-transformation-scheduler-module"></span><h2>text_transformation.scheduler module<a class="headerlink" href="#module-text_transformation.scheduler" title="Permalink to this headline">¶</a></h2>
+<p>This module houses the Scheduler component which is the front facing api server</p>
+<dl class="class">
+<dt id="text_transformation.scheduler.Scheduler">
+<em class="property">class </em><code class="sig-prename descclassname">text_transformation.scheduler.</code><code class="sig-name descname">Scheduler</code><span class="sig-paren">(</span><em class="sig-param">name: str</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/scheduler.html#Scheduler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.scheduler.Scheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.7/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Front-facing server that handles api requests and delegates work to workers.
+Uses asyncio to handle post requests. The api is /transform(POST). This
+is the only post request; it takes in a description of the data, the applied
+transformations to apply and targets to post the transformations to. If
+there are no targets, then the transformation is returned back to “POSTER”
+of input</p>
+<dl class="attribute">
+<dt id="text_transformation.scheduler.Scheduler.address">
+<code class="sig-name descname">address</code><a class="headerlink" href="#text_transformation.scheduler.Scheduler.address" title="Permalink to this definition">¶</a></dt>
+<dd><p>(str, int), (ip, port)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#tuple" title="(in Python v3.7)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.scheduler.Scheduler.app">
+<code class="sig-name descname">app</code><a class="headerlink" href="#text_transformation.scheduler.Scheduler.app" title="Permalink to this definition">¶</a></dt>
+<dd><p>helper tool to setup http request system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>web.Application</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.scheduler.Scheduler.context">
+<code class="sig-name descname">context</code><a class="headerlink" href="#text_transformation.scheduler.Scheduler.context" title="Permalink to this definition">¶</a></dt>
+<dd><p>context used by zmq to create the requester</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>zmq.Context</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.scheduler.Scheduler.listen_thread">
+<code class="sig-name descname">listen_thread</code><a class="headerlink" href="#text_transformation.scheduler.Scheduler.listen_thread" title="Permalink to this definition">¶</a></dt>
+<dd><p>runs self.listen in background to make
+self.results awaitable</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Thread</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.scheduler.Scheduler.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#text_transformation.scheduler.Scheduler.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>string identifier unique across processes</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.scheduler.Scheduler.results">
+<code class="sig-name descname">results</code><a class="headerlink" href="#text_transformation.scheduler.Scheduler.results" title="Permalink to this definition">¶</a></dt>
+<dd><p>key of unique work request id, value of future</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.scheduler.Scheduler.request_id">
+<code class="sig-name descname">request_id</code><a class="headerlink" href="#text_transformation.scheduler.Scheduler.request_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>used to assign unique ids for results</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.7/library/functions.html#int" title="(in Python v3.7)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.scheduler.Scheduler.requester">
+<code class="sig-name descname">requester</code><a class="headerlink" href="#text_transformation.scheduler.Scheduler.requester" title="Permalink to this definition">¶</a></dt>
+<dd><p>socket to push requests to workers</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>zmq.Socket</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.scheduler.Scheduler.host">
+<code class="sig-name descname">host</code><span class="sig-paren">(</span><em class="sig-param">ip: str</em>, <em class="sig-param">port: int</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/scheduler.html#Scheduler.host"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.scheduler.Scheduler.host" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts web app</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ip</strong> – host address, do 0.0.0.0 to put across all possible</p></li>
+<li><p><strong>port</strong> – port number to access</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.scheduler.Scheduler.listen">
+<code class="sig-name descname">listen</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/scheduler.html#Scheduler.listen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.scheduler.Scheduler.listen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that gets spawned by listen_thread. It listens for responses from
+workers and populates the results (currently awaited futures) with
+the responses it recieves</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.scheduler.Scheduler.start">
+<code class="sig-name descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/scheduler.html#Scheduler.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.scheduler.Scheduler.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts self.listen_thread and app</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.scheduler.Scheduler.stop">
+<code class="sig-name descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/scheduler.html#Scheduler.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.scheduler.Scheduler.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ends self.listen_thread</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.scheduler.Scheduler.transform">
+<em class="property">async </em><code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param">json</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/scheduler.html#Scheduler.transform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.scheduler.Scheduler.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>HTTP request is routed here, what is expected of request is are these
+attributes. type: describes the type of data to be parsed (currently
+only text and html. data: the raw data passed in (must match type).
+transformed: list of transformations to alter the data</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>json</strong> (<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – dictionary representation of the json required to be
+transformed</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>response to the transformation</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.scheduler.Scheduler.transform_route">
+<em class="property">async </em><code class="sig-name descname">transform_route</code><span class="sig-paren">(</span><em class="sig-param">request</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/scheduler.html#Scheduler.transform_route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.scheduler.Scheduler.transform_route" title="Permalink to this definition">¶</a></dt>
+<dd><p>Entry point for incoming post request for the route /transform</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>request</strong> (<em>web.Request</em>) – post request with json data that has keys
+for: type, data and transformations as specified in the API</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>json repsonse with the dictionary of transformations</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(web.Response)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-text_transformation.transformations">
+<span id="text-transformation-transformations-module"></span><h2>text_transformation.transformations module<a class="headerlink" href="#module-text_transformation.transformations" title="Permalink to this headline">¶</a></h2>
+<p>This file supplies helper functions to handle transformation of input data to
+output. The Worker uses these tools to parse its transformations</p>
+<dl class="function">
+<dt id="text_transformation.transformations.ngrams">
+<code class="sig-prename descclassname">text_transformation.transformations.</code><code class="sig-name descname">ngrams</code><span class="sig-paren">(</span><em class="sig-param">n: list</em>, <em class="sig-param">stop_word_list=[]</em>, <em class="sig-param">soup_instance=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/transformations.html#ngrams"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.transformations.ngrams" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a soup instance, a list of n, and a list of stop words and returns
+all resulting ngrams without stop words</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stop_word_list</strong> (<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – A list of stop words to be filtered</p></li>
+<li><p><strong>n</strong> (<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – A list containing The amount of words in each gram
+(i.e. 2-gram or 5-gram)</p></li>
+<li><p><strong>soup_instance</strong> – An instance of BeautifulSoup that contains the text to
+transform</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A dictionary where the keys are each n and the values are</dt><dd><p>their own dictionary where the keys is each ngram while the values
+are a list of their occurrences</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="text_transformation.transformations.stripped">
+<code class="sig-prename descclassname">text_transformation.transformations.</code><code class="sig-name descname">stripped</code><span class="sig-paren">(</span><em class="sig-param">executing: bool</em>, <em class="sig-param">stop_word_list=[]</em>, <em class="sig-param">soup_instance=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/transformations.html#stripped"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.transformations.stripped" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a soup instance and filters out html tags and stop words and returns
+the resulting text in all lower case</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stop_word_list</strong> (<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#list" title="(in Python v3.7)"><em>list</em></a>) – A list of stop words to be filtered</p></li>
+<li><p><strong>soup_instance</strong> – An instance of BeautifulSoup that contains the text to
+transform</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A string that does not contain html tags or stop words</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#str" title="(in Python v3.7)">str</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="text_transformation.transformations.title">
+<code class="sig-prename descclassname">text_transformation.transformations.</code><code class="sig-name descname">title</code><span class="sig-paren">(</span><em class="sig-param">executing: bool</em>, <em class="sig-param">soup_instance=None</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/transformations.html#title"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.transformations.title" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a soup instance a returns the title. If there is no title, it will
+then check h1, then h2, h3, h4, h5, h6, and the p tag in order. This
+function will only return a title of a constant size</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>executing</strong> (<a class="reference external" href="https://docs.python.org/3.7/library/functions.html#bool" title="(in Python v3.7)"><em>bool</em></a>) – If true, this function returns the title, otherwise
+it returns nothing</p></li>
+<li><p><strong>soup_instance</strong> – An instance of BeautifulSoup that contains the text to
+transform</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>A string that contains the title or “”</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#str" title="(in Python v3.7)">str</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-text_transformation.worker">
+<span id="text-transformation-worker-module"></span><h2>text_transformation.worker module<a class="headerlink" href="#module-text_transformation.worker" title="Permalink to this headline">¶</a></h2>
+<p>This module houses the Worker component which is used by the scheduler to
+increase throughput by running tasks in parallel</p>
+<dl class="class">
+<dt id="text_transformation.worker.Worker">
+<em class="property">class </em><code class="sig-prename descclassname">text_transformation.worker.</code><code class="sig-name descname">Worker</code><span class="sig-paren">(</span><em class="sig-param">scheduler_name: str</em>, <em class="sig-param">transformations: dict</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/worker.html#Worker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.worker.Worker" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.7/library/functions.html#object" title="(in Python v3.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Takes in requests from the scheduler and performs them and funnels the
+results back to the scheduler.</p>
+<dl class="attribute">
+<dt id="text_transformation.worker.Worker.context">
+<code class="sig-name descname">context</code><a class="headerlink" href="#text_transformation.worker.Worker.context" title="Permalink to this definition">¶</a></dt>
+<dd><p>context used by zmq to create the sockets that
+push/pull information to/from a scheduler</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>zmq.Context</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.worker.Worker.listen_thread">
+<code class="sig-name descname">listen_thread</code><a class="headerlink" href="#text_transformation.worker.Worker.listen_thread" title="Permalink to this definition">¶</a></dt>
+<dd><p>runs self.listen in background to test worker
+threads without too much hassle</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Thread</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.worker.Worker.scheduler_name">
+<code class="sig-name descname">scheduler_name</code><a class="headerlink" href="#text_transformation.worker.Worker.scheduler_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>name of scheduler receives requests from and
+pushes results to</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#str" title="(in Python v3.7)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="text_transformation.worker.Worker.transformations">
+<code class="sig-name descname">transformations</code><a class="headerlink" href="#text_transformation.worker.Worker.transformations" title="Permalink to this definition">¶</a></dt>
+<dd><p>string of transformation names</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.worker.Worker.listen">
+<code class="sig-name descname">listen</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/worker.html#Worker.listen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.worker.Worker.listen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Listens for incoming requests by a scheduler. This call blocks
+indefinitely (or until self.stop is invoked)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.worker.Worker.on_recv">
+<code class="sig-name descname">on_recv</code><span class="sig-paren">(</span><em class="sig-param">data</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/worker.html#Worker.on_recv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.worker.Worker.on_recv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handler of json data it receives from listen</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#dict" title="(in Python v3.7)"><em>dict</em></a>) – dictionary representation of the json required to be
+transformed</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>response to the transformation</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(<a class="reference external" href="https://docs.python.org/3.7/library/stdtypes.html#dict" title="(in Python v3.7)">dict</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.worker.Worker.start">
+<code class="sig-name descname">start</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/worker.html#Worker.start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.worker.Worker.start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Non-blocking call that starts a thread which listens for requests from
+the scheduler and pushes results back to the scheduler</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="text_transformation.worker.Worker.stop">
+<code class="sig-name descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/text_transformation/worker.html#Worker.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#text_transformation.worker.Worker.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>The listen call blocks indefinitly, stop can be invoked (from another
+thread) to end the self.listen call</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-text_transformation">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-text_transformation" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">text-transformation</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Authors</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Module Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">text_transformation package</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">text_transformation</a><ul>
+      <li>Previous: <a href="modules.html" title="previous chapter">text_transformation</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, gregjhansell97.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/api/text_transformation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
